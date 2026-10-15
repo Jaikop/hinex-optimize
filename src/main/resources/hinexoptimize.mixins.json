@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "me.JAKOP.hinexOptimize.mixin",
+  "plugin": "me.JAKOP.hinexOptimize.core.mixin.HinexMixinPlugin",
+  "compatibilityLevel": "${java}",
+  "mixins": [],
+  "client": [
+    "core.MinecraftMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

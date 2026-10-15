@@ -1,0 +1,33 @@
+# gradle
+.gradle/
+.kotlin/
+build/
+out/
+classes/
+
+# idea
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# vscode / eclipse
+.settings/
+.vscode/
+bin/
+.classpath
+.project
+*.launch
+
+# minecraft run directory (shared between versions)
+run/
+
+# java
+hs_err_*.log
+replay_*.log
+*.hprof
+*.jfr
+
+# os
+*.DS_Store
+Thumbs.db

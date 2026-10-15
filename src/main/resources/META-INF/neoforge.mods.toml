@@ -1,0 +1,21 @@
+license = "LGPL-3.0-only"
+
+modLoader = "javafml"
+loaderVersion = "[1,)"
+
+[[mods]]
+modId = "${id}"
+displayName = "${name}"
+version = "${version}"
+authors = "JAKOP"
+description = "Performance mod for the new Vulkan-era renderer: shader and pipeline caches, less per-draw work and small fixes, without changing vanilla behaviour."
+
+[[mixins]]
+config = "hinexoptimize.mixins.json"
+
+[[dependencies.${id}]]
+modId = "minecraft"
+type = "required"
+versionRange = "${minecraft}"
+ordering = "NONE"
+side = "BOTH"

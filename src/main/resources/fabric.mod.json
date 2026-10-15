@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "${id}",
+  "version": "${version}",
+  "name": "${name}",
+  "description": "Performance mod for the new Vulkan-era renderer: shader and pipeline caches, less per-draw work and small fixes, without changing vanilla behaviour.",
+  "authors": [
+    "JAKOP"
+  ],
+  "license": "LGPL-3.0-only",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "me.JAKOP.hinexOptimize.platform.fabric.HinexOptimizeFabric"
+    ]
+  },
+  "mixins": [
+    "hinexoptimize.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader}",
+    "minecraft": "${minecraft}",
+    "java": ">=25"
+  }
+}
