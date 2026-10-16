@@ -14,14 +14,6 @@ import net.minecraft.world.level.levelgen.presets.WorldPresets;
 
 import java.util.List;
 
-/**
- * Unattended benchmark for comparing builds: {@code -Dhinexoptimize.autobench=spin} opens a
- * fixed-seed world (created on the first run, reused afterwards), freezes time, weather and
- * mob spawning, waits until every section is rendered, runs {@link BenchRunner} and quits.
- *
- * <p>Other properties ({@code hinexoptimize.autobench.<name>}): {@code tag}, {@code seconds},
- * {@code warmup}, {@code renderDistance}, {@code reload} and {@code exit}.
- */
 public final class AutoBench {
     private static final String PREFIX = "hinexoptimize.autobench";
     private static final long SEED = 20261015L;
@@ -57,7 +49,6 @@ public final class AutoBench {
         }
         if (stepStart == 0) {
             stepStart = now;
-            // An unfocused window would otherwise pause the integrated server
             mc.options.pauseOnLostFocus = false;
         }
         long elapsed = now - stepStart;
@@ -71,7 +62,6 @@ public final class AutoBench {
                     openWorld(mc, title);
                     next(Step.WAIT_WORLD, now);
                 } else if (mc.level == null) {
-                    // First launches show onboarding/notice screens before the title screen
                     HinexOptimize.LOGGER.info("[HinexBench] Skipping start-up screen {}",
                         mc.gui.screen() == null ? "none" : mc.gui.screen().getClass().getName());
                     mc.gui.setScreen(new TitleScreen());
@@ -82,7 +72,6 @@ public final class AutoBench {
                     if (playerSince == 0) {
                         playerSince = now;
                     }
-                    // Loading screens close by themselves; anything still open after 5 s is in the way
                     if (mc.gui.screen() != null && now - playerSince > 5 * SECOND) {
                         mc.gui.setScreen(null);
                     }

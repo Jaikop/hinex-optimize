@@ -3,7 +3,6 @@ package me.JAKOP.hinexOptimize.bench;
 import java.time.Instant;
 import java.util.Arrays;
 
-/** Everything one benchmark run measured, plus the environment it ran in. */
 public record BenchResult(
     Instant time,
     String tag,
@@ -15,7 +14,6 @@ public record BenchResult(
     long gcMillis,
     long reloadMillis,
     BenchCounters.Snapshot reloadCounters,
-    /** {@code rdswitch}: summed and longest time the mesher stayed busy after a render distance change. */
     long settleMillis,
     long maxSettleMillis,
     String notes
@@ -38,7 +36,6 @@ public record BenchResult(
         return FrameStats.of(frameNanos);
     }
 
-    /** Frame-time statistics; "1% low" is the FPS of the average of the slowest 1% of frames. */
     public record FrameStats(double avgFps, double low1Fps, double low01Fps, double p50Ms, double p95Ms, double p99Ms,
                              double maxMs, int stutters50Ms) {
         static FrameStats of(long[] frameNanos) {

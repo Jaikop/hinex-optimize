@@ -2,10 +2,6 @@ package me.JAKOP.hinexOptimize.bench;
 
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 
-/**
- * Records the time between the starts of consecutive frames ({@code Minecraft.runTick}).
- * Also keeps a rolling one-second window for {@code /hinexbench stats}.
- */
 public final class FrameRecorder {
     private static final long SECOND = 1_000_000_000L;
 
@@ -39,7 +35,6 @@ public final class FrameRecorder {
         windowFrames++;
     }
 
-    /** Starts recording; the first sample is the duration of the frame that is starting now. */
     public static void begin() {
         recording = new LongArrayList(16384);
     }

@@ -12,14 +12,13 @@
     "bench.render.RenderPassCounterMixin",
     "bench.render.SectionCompileCounterMixin",
     "bench.render.VulkanDescriptorCounterMixin",
-    "core.MinecraftMixin",
+    "render.dynamicview.MinecraftMixin",
+    "render.dynamicview.OptionsMixin",
     "render.smoothview.LevelExtractorMixin",
     "render.smoothview.LevelRendererMixin",
     "render.smoothview.RenderSectionMixin",
     "render.smoothview.SectionOcclusionGraphMixin",
     "render.smoothview.SectionTaskAccessor",
-    "render.dynamicview.MinecraftMixin",
-    "render.dynamicview.OptionsMixin",
     "render.smoothview.ViewAreaAccessor"
   ],
   "injectors": {

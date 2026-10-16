@@ -11,11 +11,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
- * {@code extract} calls {@code allChanged()} only when the effective render distance changed; that
- * call is marked so {@link SmoothViewDistance} can resize instead of rebuilding everything.
- * Every other {@code allChanged()} keeps the vanilla full rebuild.
- */
 @Mixin(LevelExtractor.class)
 public abstract class LevelExtractorMixin {
     @Shadow
@@ -37,7 +32,6 @@ public abstract class LevelExtractorMixin {
         SmoothViewDistance.onAllChanged();
     }
 
-    /** Camera rotation re-culls from the (still empty) new graph; keep the remapped list instead. */
     @Inject(method = "applyFrustum", at = @At("HEAD"), cancellable = true)
     private void hinexoptimize$deferFrustumUntilGraphReady(CallbackInfo ci) {
         if (SmoothViewDistance.shouldDeferFrustum()) {

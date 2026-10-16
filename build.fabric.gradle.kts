@@ -4,11 +4,11 @@ plugins {
 }
 
 // DO NOT set group = ...!
-version = "${property("mod.version")}+${sc.current.version}"
+val minecraftVersion = findProperty("deps.minecraft") as String? ?: sc.current.version
+version = "${property("mod.version")}+$minecraftVersion"
 base.archivesName = "${property("mod.id") as String}-fabric"
 
 val requiredJava = JavaVersion.VERSION_25
-val minecraftVersion = findProperty("deps.minecraft") as String? ?: sc.current.version
 
 // Releases to mark compatible on Modrinth / CurseForge
 val compatibleVersions: List<String> = sc.properties.rawOrNull("mod", "mc_releases")

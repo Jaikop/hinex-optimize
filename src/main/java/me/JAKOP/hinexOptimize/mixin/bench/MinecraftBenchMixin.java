@@ -11,7 +11,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.concurrent.CompletableFuture;
 
-/** Frame boundaries, startup completion and resource reloads. Same signatures in 26.2-26.4. */
 @Mixin(Minecraft.class)
 public abstract class MinecraftBenchMixin {
     private static final String RELOAD = "reloadResourcePacks(ZLnet/minecraft/client/GameLoadCookie;)Ljava/util/concurrent/CompletableFuture;";

@@ -9,17 +9,7 @@ import net.minecraft.client.renderer.chunk.CompiledSectionMesh;
 import net.minecraft.client.renderer.chunk.SectionMesh;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 
-/**
- * Changes the render distance without throwing away every compiled chunk section.
- *
- * <p>Vanilla handles a render distance change like any other "everything changed" event: all
- * section meshes are released and rebuilt. Meshes and their GPU allocations belong to the mesh
- * object, not to the grid slot, so for sections inside both the old and the new grid the mesh is
- * moved over instead, together with its "needs rebuild" flag. Only the ring that came into view
- * gets built; the ring that left is released as before.
- */
 public final class SmoothViewDistance {
-    /** Safety net: if the visibility graph never reports back, stop holding the old visible list. */
     private static final long GRAPH_WAIT_NANOS = 2_000_000_000L;
 
     private static boolean changingViewDistance;
@@ -29,7 +19,6 @@ public final class SmoothViewDistance {
     private SmoothViewDistance() {
     }
 
-    /** The trackers before and after {@code LevelExtractor.allChanged()} for a render-distance-only change. */
     public record Request(SectionUpdateTracker oldTracker, SectionUpdateTracker newTracker) {
     }
 
@@ -45,7 +34,6 @@ public final class SmoothViewDistance {
         pending = before != null && after != null && before != after ? new Request(before, after) : null;
     }
 
-    /** Any other reason for {@code allChanged()} (resource reload, graphics option) needs the vanilla full rebuild. */
     public static void onAllChanged() {
         if (!changingViewDistance) {
             pending = null;
@@ -58,17 +46,11 @@ public final class SmoothViewDistance {
         return request;
     }
 
-    /**
-     * Moves meshes from {@code oldArea} to {@code newArea} (already positioned at the camera) and
-     * carries over the dirty flags. The caller releases {@code oldArea} afterwards.
-     */
     public static Stats transfer(ViewArea oldArea, ViewArea newArea, Request request) {
         long now = System.nanoTime();
-        int[] counts = new int[2]; // moved, kept clean
+        int[] counts = new int[2];
         ViewAreaAccessor newAccess = (ViewAreaAccessor) newArea;
-        // Only sections with a mesh have anything to carry over: everything else starts uncompiled
-        // and dirty in the new grid anyway, exactly like vanilla. forEach, not the iterator: the
-        // storage's iterator skips the last element.
+        // forEach, not for-each: the storage iterator skips the last element
         ((ViewAreaAccessor) oldArea).hinexoptimize$sections().forEach(previous -> {
             SectionMesh mesh = previous.sectionMesh.get();
             if (mesh == CompiledSectionMesh.UNCOMPILED) {
@@ -77,11 +59,11 @@ public final class SmoothViewDistance {
             long node = previous.getSectionNode();
             SectionRenderDispatcher.RenderSection section = newAccess.hinexoptimize$getRenderSection(node);
             if (section == null || section.getSectionNode() != node) {
-                return; // left the grid: released with the old grid
+                return;
             }
             boolean pendingRebuild = ((SmoothSection) previous).hinexoptimize$isRebuildPending(now);
             if (!previous.sectionMesh.compareAndSet(mesh, CompiledSectionMesh.UNCOMPILED)) {
-                return; // changed under us; leave it to the normal rebuild
+                return;
             }
             section.sectionMesh.set(mesh);
             ((SmoothSection) section).hinexoptimize$copyFadeStateFrom((SmoothSection) previous);
@@ -96,19 +78,12 @@ public final class SmoothViewDistance {
                 newState.setNotDirty();
                 counts[1]++;
             } else if (oldState != null && oldState.isDirtyFromPlayer()) {
-                // Still needs a rebuild; keep the player-change priority
                 newState.setDirty(true);
             }
         });
         return new Stats(counts[0], counts[1], newArea.size() - counts[1], Math.max(0, oldArea.size() - counts[0]));
     }
 
-    /**
-     * Releases the old grid like {@code ViewArea.releaseAllBuffers()}, but skips sections that have
-     * nothing to release: their mesh moved (or never existed) and no rebuild or translucency resort
-     * is in flight. An uncancelled task could hand its result to the old section, which would then
-     * share a mesh with the new one.
-     */
     public static void releaseOld(ViewArea oldArea) {
         long now = System.nanoTime();
         ((ViewAreaAccessor) oldArea).hinexoptimize$sections().forEach(section -> {
@@ -120,11 +95,6 @@ public final class SmoothViewDistance {
         });
     }
 
-    /**
-     * Points a visible-section list at the sections of the new grid that took over the meshes, and
-     * drops sections that left the grid. Without this the world is not drawn at all until the
-     * visibility graph of the new grid has been computed on a worker thread.
-     */
     public static void remapVisible(ObjectArrayList<SectionRenderDispatcher.RenderSection> sections, ViewArea newArea) {
         ViewAreaAccessor access = (ViewAreaAccessor) newArea;
         int kept = 0;
@@ -138,7 +108,6 @@ public final class SmoothViewDistance {
         sections.size(kept);
     }
 
-    /** Until the new graph is ready, frustum culling would empty the remapped list, so it is deferred. */
     public static void markGraphPending() {
         graphPendingSince = System.nanoTime();
     }
@@ -163,9 +132,8 @@ public final class SmoothViewDistance {
         return true;
     }
 
-    /** @param t timestamps: start, grid created, graph reset, camera placed, meshes moved, old grid released */
     public static void log(int fromDistance, int toDistance, Stats stats, long[] t) {
-        HinexOptimize.LOGGER.info("Render distance {} -> {} without full rebuild: {} meshes kept ({} up to date), {} sections to build;"
+        HinexOptimize.LOGGER.debug("Render distance {} -> {} without full rebuild: {} meshes kept ({} up to date), {} sections to build;"
                 + " {} ms (grid {}, graph {}, place {}, move {}, release {})",
             fromDistance, toDistance, stats.moved(), stats.keptClean(), stats.rebuilt(), ms(t[5] - t[0]),
             ms(t[1] - t[0]), ms(t[2] - t[1]), ms(t[3] - t[2]), ms(t[4] - t[3]), ms(t[5] - t[4]));

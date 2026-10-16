@@ -10,10 +10,6 @@ import org.spongepowered.asm.service.MixinService;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Skips mixins that are disabled in the config, and mixins whose target class does not
- * exist in this Minecraft version (renderpearl classes move between 26.x releases).
- */
 public final class HinexMixinPlugin implements IMixinConfigPlugin {
     private String mixinPackage;
 
@@ -56,7 +52,6 @@ public final class HinexMixinPlugin implements IMixinConfigPlugin {
         } catch (ClassNotFoundException e) {
             return false;
         } catch (Exception e) {
-            // Unexpected provider failure: let Mixin decide and report it
             return true;
         }
     }

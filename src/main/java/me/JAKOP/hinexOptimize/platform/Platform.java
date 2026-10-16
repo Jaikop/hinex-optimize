@@ -2,7 +2,6 @@ package me.JAKOP.hinexOptimize.platform;
 
 import java.nio.file.Path;
 
-/** Loader-specific functionality. Safe to use early, including from the mixin plugin. */
 public sealed interface Platform {
     Platform INSTANCE =
         /*? if fabric {*/new FabricPlatform();

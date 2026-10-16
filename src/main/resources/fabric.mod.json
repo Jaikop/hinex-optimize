@@ -3,11 +3,17 @@
   "id": "${id}",
   "version": "${version}",
   "name": "${name}",
-  "description": "Performance mod for the new Vulkan-era renderer: shader and pipeline caches, less per-draw work and small fixes, without changing vanilla behaviour.",
+  "description": "Changes the render distance without rebuilding every chunk, so the world never disappears, and can lower it automatically to keep your FPS. Built for the new Vulkan-era renderer. Source: https://github.com/Jaikop/hinex-optimize",
   "authors": [
     "JAKOP"
   ],
+  "contact": {
+    "homepage": "https://github.com/Jaikop/hinex-optimize",
+    "sources": "https://github.com/Jaikop/hinex-optimize",
+    "issues": "https://github.com/Jaikop/hinex-optimize/issues"
+  },
   "license": "LGPL-3.0-only",
+  "icon": "assets/hinexoptimize/icon.png",
   "environment": "*",
   "entrypoints": {
     "main": [

@@ -19,21 +19,14 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.function.Consumer;
 
-/**
- * One benchmark run, driven from the start of every frame: warm-up, measurement while the
- * camera spins at a constant speed, then an optional resource reload (F3+T) measurement.
- */
 public final class BenchRunner {
-    /** Unlimited framerate in {@code Options.framerateLimit}. */
     private static final int UNLIMITED_FPS = 260;
-    private static final float DEGREES_PER_SECOND = 24f; // one full turn every 15 s
+    private static final float DEGREES_PER_SECOND = 24f;
     private static final float PITCH = 20f;
     private static final double RELOAD_TIMEOUT_SECONDS = 180;
 
-    /** {@code rdswitch}: render distances applied in turn, starting from the configured one. */
     private static final int[] RD_STEPS = {16, 8, 12};
     private static final long SECOND = 1_000_000_000L;
-    /** A step is settled when no section was sent to the mesher for this long and the queue is empty. */
     private static final long SETTLE_QUIET_NANOS = 3 * SECOND / 2;
     private static final long STEP_TIMEOUT_NANOS = 90 * SECOND;
     private static final DateTimeFormatter FILE_STAMP = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss").withZone(ZoneId.systemDefault());
@@ -96,7 +89,6 @@ public final class BenchRunner {
         return current != null;
     }
 
-    /** Applies the benchmark settings (no vsync, unlimited FPS) without starting to measure. */
     public static BenchRunner prepare(Minecraft mc, Settings settings, Consumer<Component> feedback,
                                       Consumer<BenchResult> onDone) {
         if (current != null) {
@@ -202,15 +194,8 @@ public final class BenchRunner {
         }
     }
 
-    /**
-     * Steps through {@link #RD_STEPS}; each step waits until the mesher has been quiet for
-     * {@link #SETTLE_QUIET_NANOS}. Settle time is measured to the last section sent to the mesher.
-     *
-     * @return true when every step has settled
-     */
     private boolean tickRdSwitch(Minecraft mc, long now) {
         long compiles = BenchCounters.sectionCompiles;
-        // A frame that drew no chunk section at all: the world "disappeared"
         if (step >= 0 && mc.levelRenderer.visibleSections().isEmpty()) {
             blankFrames++;
         }
@@ -297,11 +282,10 @@ public final class BenchRunner {
     }
 
     private void finish(Minecraft mc) {
-        // Captured before restoring, so the report shows the settings the run used
         BenchResult.Environment environment = environment(mc);
         int effectiveDistance = mc.options.getEffectiveRenderDistance();
         if (effectiveDistance != environment.renderDistance()) {
-            addNote("rendered distance " + effectiveDistance); // lowered by dynamic render distance or the server
+            addNote("rendered distance " + effectiveDistance);
         }
         restoreEnvironment(mc);
         phase = Phase.DONE;
@@ -356,9 +340,7 @@ public final class BenchRunner {
         mc.options.enableVsync().set(false);
         mc.options.framerateLimit().set(UNLIMITED_FPS);
         mc.options.pauseOnLostFocus = false;
-        // The default "AFK" limit caps the game at 30 FPS after a minute without input
         mc.options.inactivityFpsLimit().set(InactivityFpsLimit.MINIMIZED);
-        // Always saved: rdswitch changes it even when the run keeps the player's distance
         savedRenderDistance = mc.options.renderDistance().get();
         if (settings.renderDistance() > 0) {
             mc.options.renderDistance().set(settings.renderDistance());

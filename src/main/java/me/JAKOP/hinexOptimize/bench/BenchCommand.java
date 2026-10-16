@@ -9,16 +9,6 @@ import net.minecraft.network.chat.Component;
 import java.util.Locale;
 import java.util.function.BiConsumer;
 
-/**
- * Client command {@code /hinexbench}, shared by both loaders.
- *
- * <ul>
- *   <li>{@code run [seconds]} — spin the camera where you stand and measure frame times, then a resource reload</li>
- *   <li>{@code rdswitch} — change render distance 16 / 8 / 12 and time how long chunks take to settle</li>
- *   <li>{@code reload} — time a resource reload (F3+T) only</li>
- *   <li>{@code stats} — counters for the last second and compile totals</li>
- * </ul>
- */
 public final class BenchCommand {
     private static final int DEFAULT_SECONDS = 30;
 

@@ -16,22 +16,12 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-/**
- * Lithium-style switches stored in {@code config/hinexoptimize.properties}.
- * Loaded once, before mixins are applied, so changes need a restart.
- *
- * <p>For benchmarking, values can be overridden without touching the file:
- * {@code -Dhinexoptimize.option.<key>=true|false}, or {@code -Dhinexoptimize.vanilla=true}
- * to switch off every optimization while keeping the core and benchmark hooks.
- */
 public final class HinexConfig {
     public static final String FILE_NAME = "hinexoptimize.properties";
     public static final String MIXIN_PREFIX = "mixin";
 
-    // Every option is declared here; features add their own entries.
     private static final List<Option> OPTIONS = List.of(
         Option.safe("mixin", "Master switch for all HinexOptimize mixins"),
-        Option.safe("mixin.core", "Core hooks used by the other features"),
         Option.safe("mixin.bench", "Frame times, draw counters and compile timings for /hinexbench (negligible overhead)"),
         Option.safe("mixin.render", "Rendering optimizations"),
         Option.safe("mixin.render.smoothview", "Change the render distance without rebuilding every chunk: only the added ring is built"),
@@ -44,8 +34,7 @@ public final class HinexConfig {
         new IntOption("dynamicview.max_reduction", 8, 1, 30, "Dynamic render distance: never go more than this many chunks below your setting")
     );
 
-    // Options that are not optimizations; vanilla mode keeps them on
-    private static final Set<String> INFRASTRUCTURE = Set.of("mixin", "mixin.core", "mixin.bench");
+    private static final Set<String> INFRASTRUCTURE = Set.of("mixin", "mixin.bench");
 
     private static HinexConfig instance;
 
@@ -88,7 +77,6 @@ public final class HinexConfig {
         return values.values().stream().filter(Boolean::booleanValue).count();
     }
 
-    /** Keys of declared options that are currently off, for benchmark reports. */
     public List<String> disabledKeys() {
         return values.entrySet().stream().filter(e -> !e.getValue()).map(Map.Entry::getKey).toList();
     }
@@ -97,11 +85,6 @@ public final class HinexConfig {
         return Boolean.getBoolean("hinexoptimize.vanilla");
     }
 
-    /**
-     * A mixin is applied only if every declared option along its package path is enabled,
-     * e.g. {@code mixin}, {@code mixin.vulkan}, {@code mixin.vulkan.state} for
-     * {@code <root>.mixin.vulkan.state.FooMixin}.
-     */
     public boolean isMixinEnabled(String mixinPackagePath) {
         String key = MIXIN_PREFIX;
         if (!isEnabled(key)) {
@@ -125,7 +108,6 @@ public final class HinexConfig {
             Properties properties = new Properties();
             try {
                 String text = Files.readString(file, StandardCharsets.UTF_8);
-                // Editors like Notepad may prepend a BOM, which Properties would read as part of a key
                 if (text.startsWith("﻿")) {
                     text = text.substring(1);
                 }
@@ -149,7 +131,6 @@ public final class HinexConfig {
             }
         }
         config.save(file);
-        // Applied after saving so command-line overrides never end up in the file
         config.applySystemOverrides();
         return config;
     }
@@ -199,7 +180,6 @@ public final class HinexConfig {
         }
     }
 
-    /** Rewrites the file with every option, keeping user values; written atomically. */
     private void save(Path file) {
         try {
             Files.createDirectories(file.getParent());

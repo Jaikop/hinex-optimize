@@ -6,11 +6,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
- * Counts descriptor work done by the Vulkan backend per draw. 26.2/26.3 use push descriptors,
- * 26.4 allocates and updates descriptor sets; every version creates a buffer view per texel buffer.
- * Each injector is optional because only some of these calls exist in a given version.
- */
 @Mixin(targets = {"com.mojang.blaze3d.vulkan.VulkanRenderPass", "com.mojang.renderpearl.backend.vulkan.VulkanRenderPass"})
 public abstract class VulkanDescriptorCounterMixin {
     @Inject(method = "pushDescriptors", require = 0, at = @At(value = "INVOKE",

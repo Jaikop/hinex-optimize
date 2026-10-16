@@ -7,7 +7,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/** {@code consumeFrustumUpdate()} returns true once a full visibility update has finished. */
 @Mixin(SectionOcclusionGraph.class)
 public abstract class SectionOcclusionGraphMixin {
     @Inject(method = "consumeFrustumUpdate", at = @At("RETURN"))

@@ -11,11 +11,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.nio.IntBuffer;
 import java.util.Collection;
 
-/**
- * Counts calls on the frontend render pass, which both backends sit behind:
- * {@code blaze3d.systems.RenderPass} in 26.2, {@code renderpearl.frontend.FrontendRenderPass} in 26.3+.
- * The plugin drops whichever target does not exist in the running version.
- */
 @Mixin(targets = {"com.mojang.blaze3d.systems.RenderPass", "com.mojang.renderpearl.frontend.FrontendRenderPass"})
 public abstract class RenderPassCounterMixin {
     @Inject(method = "setPipeline", at = @At("HEAD"))
@@ -23,8 +18,6 @@ public abstract class RenderPassCounterMixin {
         BenchCounters.pipelineBinds++;
     }
 
-    // 26.3+: every uniform goes through the private Object overload, including rebinds after setPipeline.
-    // 26.2: textures and buffers have separate public methods.
     @Inject(method = {
         "setUniform(Ljava/lang/String;Ljava/lang/Object;)V",
         "bindTexture",
@@ -41,7 +34,6 @@ public abstract class RenderPassCounterMixin {
         BenchCounters.drawItems++;
     }
 
-    // Batched path used by GUI, text and entities: one backend draw per element of the collection
     @Inject(method = "drawMultipleIndexed", at = @At("HEAD"))
     private void hinexoptimize$countDrawMultiple(CallbackInfo ci, @Local(argsOnly = true, ordinal = 0) Collection<?> draws) {
         BenchCounters.drawCalls += draws.size();

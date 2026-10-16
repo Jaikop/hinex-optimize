@@ -3,7 +3,6 @@ package me.JAKOP.hinexOptimize.mixin.render.smoothview;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-/** The flags became plain volatile booleans in 26.4; before that they were AtomicBooleans. */
 @Mixin(targets = "net.minecraft.client.renderer.chunk.SectionRenderDispatcher$RenderSection$SectionTask")
 public interface SectionTaskAccessor {
     //? if >=26.4 {

@@ -7,10 +7,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/**
- * Times backend pipeline creation ({@code compilePipeline} on the OpenGL and Vulkan devices).
- * In 26.2 this includes the GLSL compile; in 26.3+ GLSL is compiled by the frontend beforehand.
- */
 @Mixin(targets = {
     "com.mojang.blaze3d.vulkan.VulkanDevice",
     "com.mojang.blaze3d.opengl.GlDevice",

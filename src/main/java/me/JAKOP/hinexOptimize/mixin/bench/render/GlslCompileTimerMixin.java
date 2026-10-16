@@ -6,10 +6,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/**
- * Times GLSL to SPIR-V compilation through shaderc. The class moved in every release:
- * 26.2 (Vulkan only), 26.3 and 26.4.
- */
 @Mixin(targets = {
     "com.mojang.blaze3d.vulkan.glsl.GlslCompiler",
     "com.mojang.renderpearl.frontend.shaders.GlslCompiler",

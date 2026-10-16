@@ -31,3 +31,6 @@ replay_*.log
 # os
 *.DS_Store
 Thumbs.db
+
+# release jars
+dist/

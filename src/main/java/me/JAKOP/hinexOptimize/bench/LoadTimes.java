@@ -5,7 +5,6 @@ import me.JAKOP.hinexOptimize.HinexOptimize;
 import java.lang.management.ManagementFactory;
 import java.util.concurrent.CompletableFuture;
 
-/** Startup and resource-reload durations. */
 public final class LoadTimes {
     private static volatile boolean gameLoaded;
     private static volatile long startupMillis = -1;
@@ -19,7 +18,6 @@ public final class LoadTimes {
     private LoadTimes() {
     }
 
-    /** {@code Minecraft.onGameLoadFinished}: the first resource load is done and the title screen is next. */
     public static void onGameLoadFinished() {
         if (gameLoaded) {
             return;

@@ -14,10 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Writes {@code hinexoptimize/bench/summary-v2.csv} (one row per run) and a per-run frame-time CSV.
- * Bump the summary file version when the columns change.
- */
 public final class BenchReport {
     private static final String SUMMARY_FILE = "summary-v2.csv";
     private static final DateTimeFormatter FILE_STAMP = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss").withZone(ZoneId.systemDefault());
@@ -37,7 +33,6 @@ public final class BenchReport {
     private BenchReport() {
     }
 
-    /** @return the per-run frame file */
     public static Path write(Path gameDir, BenchResult result) throws IOException {
         Path dir = gameDir.resolve(HinexOptimize.MOD_ID).resolve("bench");
         Files.createDirectories(dir);
@@ -123,7 +118,6 @@ public final class BenchReport {
         return row;
     }
 
-    /** One-line human summary, also used for the log marker that scripts look for. */
     public static String summaryLine(BenchResult r) {
         BenchResult.FrameStats s = r.frameStats();
         double frames = Math.max(1, r.frames());

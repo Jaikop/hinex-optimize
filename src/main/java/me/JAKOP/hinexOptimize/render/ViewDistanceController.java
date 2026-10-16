@@ -1,18 +1,7 @@
 package me.JAKOP.hinexOptimize.render;
 
-
 import java.util.Arrays;
 
-/**
- * Decides the dynamic render distance from frame times. Plain Java without game classes, so it can be
- * tested; {@link DynamicViewDistance} feeds it once per frame.
- *
- * <p>Frames are judged in windows of {@link #WINDOW_NANOS} by their 90th percentile. Two slow windows
- * in a row lower the distance by one chunk; three fast windows raise it by one. Inside the target band
- * (VSync or a frame limit pins the frame time) it probes upwards every {@link #STEADY_WINDOWS_TO_PROBE}
- * windows. After every step it waits {@link #COOLDOWN_NANOS} and until the mesher is idle. Lowering
- * right after raising means the higher distance is too much, so raising is blocked for a minute.
- */
 public final class ViewDistanceController {
     public static final int NO_CAP = Integer.MAX_VALUE;
     static final long SECOND = 1_000_000_000L;
@@ -30,7 +19,6 @@ public final class ViewDistanceController {
     public record Settings(int targetFps, int minDistance, int maxReduction) {
     }
 
-    /** What the last evaluated window looked like, for logging. */
     public record Decision(int distance, double p90Nanos, double targetNanos) {
     }
 
@@ -47,7 +35,6 @@ public final class ViewDistanceController {
     private int fastWindows;
     private int steadyWindows;
 
-    /** The current cap; {@link #NO_CAP} when the player's setting is used as is. */
     public int cap() {
         return cap;
     }
@@ -63,15 +50,8 @@ public final class ViewDistanceController {
         steadyWindows = 0;
     }
 
-    /**
-     * Records the frame that starts at {@code now}.
-     *
-     * @param mesherIdle no chunk sections waiting to be built; decisions wait for it after a step
-     * @return the new decision when the distance changed, otherwise null
-     */
     public Decision onFrame(long now, int setting, int framerateLimit, boolean mesherIdle, Settings settings) {
         if (setting != playerDistance) {
-            // The player (or a benchmark) changed the setting: start over from it
             playerDistance = setting;
             cap = NO_CAP;
             frameCount = 0;

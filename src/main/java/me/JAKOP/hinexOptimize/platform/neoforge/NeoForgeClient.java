@@ -6,7 +6,6 @@ import net.minecraft.commands.CommandSourceStack;
 import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
-/^* Client-only setup; never loaded on a dedicated server. ^/
 final class NeoForgeClient {
     private NeoForgeClient() {
     }

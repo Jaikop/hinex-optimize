@@ -6,13 +6,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
- * Counts chunk sections sent to the mesher. NeoForge adds overloads taking extra geometry
- * renderers; the vanilla ones delegate to them and the game calls them directly, so on NeoForge
- * only those are counted (counting both would count twice).
- */
 @Mixin(targets = "net.minecraft.client.renderer.chunk.SectionRenderDispatcher$RenderSection")
 public abstract class SectionCompileCounterMixin {
+    // NeoForge adds overloads that the vanilla methods delegate to; count only the ones the game calls
     @Inject(method = {
         //? if neoforge {
         /*"compileAsync(Lnet/minecraft/client/renderer/chunk/RenderSectionRegion;Ljava/util/List;)V",

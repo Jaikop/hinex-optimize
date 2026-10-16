@@ -7,7 +7,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/** Caps only the rendered distance; the saved setting and what the server is asked for stay unchanged. */
 @Mixin(Options.class)
 public abstract class OptionsMixin {
     @Inject(method = "getEffectiveRenderDistance", at = @At("RETURN"), cancellable = true)

@@ -9,14 +9,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/**
- * Tracks whether the latest rebuild of a section has landed. The result of a compile task is
- * applied by an upload callback some frames after the task finished, so "task completed" is not
- * enough: a rebuild is pending until {@code setSectionMesh} ran after the latest request.
- */
 @Mixin(SectionRenderDispatcher.RenderSection.class)
 public abstract class RenderSectionMixin implements SmoothSection {
-    /** Requests younger than this are always treated as pending (covers late uploads of cancelled tasks). */
     @Unique
     private static final long hinexoptimize$RECENT_NANOS = 500_000_000L;
 
@@ -36,8 +30,7 @@ public abstract class RenderSectionMixin implements SmoothSection {
     @Unique
     private volatile SectionRenderDispatcher.RenderSection.SectionTask hinexoptimize$latestTask;
 
-    // NeoForge adds an overload with extra geometry renderers that the vanilla one delegates to;
-    // both are hooked, recording the same task twice is harmless
+    // Both overloads: NeoForge adds one with extra geometry renderers
     @Inject(method = {
         "createCompileTask(Lnet/minecraft/client/renderer/chunk/RenderSectionRegion;)Lnet/minecraft/client/renderer/chunk/SectionRenderDispatcher$RenderSection$SectionTask;",
         "createCompileTask(Lnet/minecraft/client/renderer/chunk/RenderSectionRegion;Ljava/util/List;)Lnet/minecraft/client/renderer/chunk/SectionRenderDispatcher$RenderSection$SectionTask;"

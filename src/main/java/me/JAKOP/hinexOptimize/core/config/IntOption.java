@@ -1,6 +1,5 @@
 package me.JAKOP.hinexOptimize.core.config;
 
-/** A numeric setting; values outside {@code [min, max]} are clamped. */
 public record IntOption(String key, int defaultValue, int min, int max, String description) {
     public IntOption {
         if (defaultValue < min || defaultValue > max) {
