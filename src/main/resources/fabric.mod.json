@@ -5,7 +5,7 @@
   "name": "${name}",
   "description": "Changes the render distance without rebuilding every chunk, so the world never disappears, and can lower it automatically to keep your FPS. Built for the new Vulkan-era renderer. Source: https://github.com/Jaikop/hinex-optimize",
   "authors": [
-    "JAKOP"
+    "Jaikop"
   ],
   "contact": {
     "homepage": "https://github.com/Jaikop/hinex-optimize",
