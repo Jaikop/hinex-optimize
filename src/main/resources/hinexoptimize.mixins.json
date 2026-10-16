@@ -10,8 +10,17 @@
     "bench.render.GlslCompileTimerMixin",
     "bench.render.PipelineCompileTimerMixin",
     "bench.render.RenderPassCounterMixin",
+    "bench.render.SectionCompileCounterMixin",
     "bench.render.VulkanDescriptorCounterMixin",
-    "core.MinecraftMixin"
+    "core.MinecraftMixin",
+    "render.smoothview.LevelExtractorMixin",
+    "render.smoothview.LevelRendererMixin",
+    "render.smoothview.RenderSectionMixin",
+    "render.smoothview.SectionOcclusionGraphMixin",
+    "render.smoothview.SectionTaskAccessor",
+    "render.dynamicview.MinecraftMixin",
+    "render.dynamicview.OptionsMixin",
+    "render.smoothview.ViewAreaAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

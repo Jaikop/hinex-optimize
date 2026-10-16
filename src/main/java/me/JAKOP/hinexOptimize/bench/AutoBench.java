@@ -143,9 +143,10 @@ public final class AutoBench {
     }
 
     private static void setUpWorld(Minecraft mc) {
+        String scenario = System.getProperty(PREFIX, "spin");
         BenchRunner.Settings settings = new BenchRunner.Settings(
-            string("tag", "dev"), System.getProperty(PREFIX, "spin"), integer("warmup", 5), integer("seconds", 30),
-            bool("reload", true), integer("renderDistance", 12));
+            string("tag", "dev"), scenario, integer("warmup", 5), integer("seconds", 30),
+            bool("reload", scenario.equals("spin")), integer("renderDistance", 12));
         runner = BenchRunner.prepare(mc, settings, message -> {
         }, result -> step = Step.EXIT);
 

@@ -47,13 +47,24 @@ gradlew "Set active project to 26.4-fabric"
 Автоматический прогон для сравнения сборок (создаёт мир с фиксированным сидом, меряет, закрывает игру):
 
 ```
-powershell -File scripts\bench.ps1 -Node 26.4-fabric -Tag baseline -Vanilla
-powershell -File scripts\bench.ps1 -Node 26.3-fabric -Backend vulkan -Tag test -Repeat 2
+powershell -ExecutionPolicy Bypass -File scripts\bench.ps1 -Node 26.4-fabric -Tag baseline -Vanilla
+powershell -ExecutionPolicy Bypass -File scripts\bench.ps1 -Node 26.3-fabric -Backend vulkan -Tag test -Repeat 2
 ```
 
 `-Vanilla` выключает все оптимизации мода (остаются только замеры). Результаты дописываются
 в `run/hinexoptimize/bench/summary-v1.csv`, по кадрам — в отдельные CSV рядом.
 Окно игры во время прогона нельзя сворачивать. Сводка замеров — в [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
+
+## Что уже умеет
+
+- **Плавная смена дальности прорисовки** (`mixin.render.smoothview`, включено). Ванилла при любой смене
+  дальности выбрасывает все готовые чанки и строит их заново. Мод переносит готовую геометрию в новую сетку:
+  при увеличении строится только добавленное кольцо чанков, при уменьшении лишнее просто убирается.
+- **Динамическая дальность** (`mixin.render.dynamicview`, выключено по умолчанию). Если FPS падает ниже
+  `dynamicview.target_fps`, дальность прорисовки снижается на 1 чанк (не ниже `dynamicview.min_distance` и не
+  больше чем на `dynamicview.max_reduction` от вашей настройки); когда запас появляется — возвращается обратно.
+  Меняется только то, что рисуется: настройка в игре и то, что запрашивается у сервера, остаются вашими,
+  поэтому чанки не выгружаются и вернуть дальность дёшево.
 
 ## Конфиг
 

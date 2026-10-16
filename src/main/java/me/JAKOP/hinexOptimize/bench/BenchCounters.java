@@ -11,6 +11,8 @@ public final class BenchCounters {
     public static long uniformBinds;
     public static long descriptorUpdates;
     public static long bufferViews;
+    /** Chunk sections handed to the mesher (async or sync); render thread. */
+    public static long sectionCompiles;
 
     // Compile timings; shaders and pipelines compile on worker threads too
     public static final Timer GLSL = new Timer();
@@ -23,21 +25,23 @@ public final class BenchCounters {
 
     public static Snapshot snapshot() {
         return new Snapshot(
-            drawCalls, drawItems, pipelineBinds, uniformBinds, descriptorUpdates, bufferViews,
+            drawCalls, drawItems, pipelineBinds, uniformBinds, descriptorUpdates, bufferViews, sectionCompiles,
             GLSL.count(), GLSL.nanos(), PIPELINE.count(), PIPELINE.nanos(), LAZY_PIPELINE.count(), LAZY_PIPELINE.nanos()
         );
     }
 
     public record Snapshot(
         long drawCalls, long drawItems, long pipelineBinds, long uniformBinds, long descriptorUpdates, long bufferViews,
+        long sectionCompiles,
         long glslCount, long glslNanos, long pipelineCount, long pipelineNanos, long lazyCount, long lazyNanos
     ) {
-        public static final Snapshot ZERO = new Snapshot(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        public static final Snapshot ZERO = new Snapshot(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
         public Snapshot minus(Snapshot o) {
             return new Snapshot(
                 drawCalls - o.drawCalls, drawItems - o.drawItems, pipelineBinds - o.pipelineBinds,
                 uniformBinds - o.uniformBinds, descriptorUpdates - o.descriptorUpdates, bufferViews - o.bufferViews,
+                sectionCompiles - o.sectionCompiles,
                 glslCount - o.glslCount, glslNanos - o.glslNanos, pipelineCount - o.pipelineCount,
                 pipelineNanos - o.pipelineNanos, lazyCount - o.lazyCount, lazyNanos - o.lazyNanos
             );

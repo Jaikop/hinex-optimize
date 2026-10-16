@@ -15,6 +15,9 @@ public record BenchResult(
     long gcMillis,
     long reloadMillis,
     BenchCounters.Snapshot reloadCounters,
+    /** {@code rdswitch}: summed and longest time the mesher stayed busy after a render distance change. */
+    long settleMillis,
+    long maxSettleMillis,
     String notes
 ) {
     public record Environment(

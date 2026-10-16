@@ -32,7 +32,16 @@ public final class HinexConfig {
     private static final List<Option> OPTIONS = List.of(
         Option.safe("mixin", "Master switch for all HinexOptimize mixins"),
         Option.safe("mixin.core", "Core hooks used by the other features"),
-        Option.safe("mixin.bench", "Frame times, draw counters and compile timings for /hinexbench (negligible overhead)")
+        Option.safe("mixin.bench", "Frame times, draw counters and compile timings for /hinexbench (negligible overhead)"),
+        Option.safe("mixin.render", "Rendering optimizations"),
+        Option.safe("mixin.render.smoothview", "Change the render distance without rebuilding every chunk: only the added ring is built"),
+        Option.risky("mixin.render.dynamicview", "Lower the rendered distance when FPS drops below dynamicview.target_fps and raise it back when there is headroom")
+    );
+
+    private static final List<IntOption> INT_OPTIONS = List.of(
+        new IntOption("dynamicview.target_fps", 60, 20, 360, "Dynamic render distance: frame rate to keep"),
+        new IntOption("dynamicview.min_distance", 6, 2, 32, "Dynamic render distance: never render fewer chunks than this"),
+        new IntOption("dynamicview.max_reduction", 8, 1, 30, "Dynamic render distance: never go more than this many chunks below your setting")
     );
 
     // Options that are not optimizations; vanilla mode keeps them on
@@ -41,10 +50,14 @@ public final class HinexConfig {
     private static HinexConfig instance;
 
     private final Map<String, Boolean> values = new LinkedHashMap<>();
+    private final Map<String, Integer> ints = new LinkedHashMap<>();
 
     private HinexConfig() {
         for (Option option : OPTIONS) {
             values.put(option.key(), option.defaultValue());
+        }
+        for (IntOption option : INT_OPTIONS) {
+            ints.put(option.key(), option.defaultValue());
         }
     }
 
@@ -61,6 +74,14 @@ public final class HinexConfig {
 
     public boolean isEnabled(String key) {
         return values.getOrDefault(key, true);
+    }
+
+    public int getInt(String key) {
+        Integer value = ints.get(key);
+        if (value == null) {
+            throw new IllegalArgumentException("Undeclared setting " + key);
+        }
+        return value;
     }
 
     public long enabledCount() {
@@ -115,7 +136,10 @@ public final class HinexConfig {
             }
             for (String key : properties.stringPropertyNames()) {
                 String raw = properties.getProperty(key).trim();
-                if (!config.values.containsKey(key)) {
+                IntOption intOption = intOption(key);
+                if (intOption != null) {
+                    config.setInt(intOption, raw, file.getFileName().toString());
+                } else if (!config.values.containsKey(key)) {
                     HinexOptimize.LOGGER.warn("Unknown option '{}' in {}", key, file.getFileName());
                 } else if (raw.equalsIgnoreCase("true") || raw.equalsIgnoreCase("false")) {
                     config.values.put(key, Boolean.parseBoolean(raw));
@@ -141,8 +165,37 @@ public final class HinexConfig {
                 values.put(option.key(), Boolean.parseBoolean(override.trim()));
             }
         }
+        for (IntOption option : INT_OPTIONS) {
+            String override = System.getProperty("hinexoptimize.option." + option.key());
+            if (override != null) {
+                setInt(option, override.trim(), "system properties");
+            }
+        }
         if (vanilla) {
             HinexOptimize.LOGGER.info("Vanilla mode: all optimizations disabled for this run");
+        }
+    }
+
+    private static IntOption intOption(String key) {
+        for (IntOption option : INT_OPTIONS) {
+            if (option.key().equals(key)) {
+                return option;
+            }
+        }
+        return null;
+    }
+
+    private void setInt(IntOption option, String raw, String source) {
+        try {
+            int value = Integer.parseInt(raw);
+            int clamped = option.clamp(value);
+            if (clamped != value) {
+                HinexOptimize.LOGGER.warn("Setting '{}' = {} in {} is outside {}-{}, using {}", option.key(), value, source,
+                    option.min(), option.max(), clamped);
+            }
+            ints.put(option.key(), clamped);
+        } catch (NumberFormatException e) {
+            HinexOptimize.LOGGER.warn("Setting '{}' in {} must be a whole number, got '{}'", option.key(), source, raw);
         }
     }
 
@@ -158,6 +211,11 @@ public final class HinexConfig {
                     writer.write("# " + option.description() + (option.risky() ? " [risky]" : "")
                         + " (default: " + option.defaultValue() + ")\n");
                     writer.write(option.key() + "=" + values.get(option.key()) + "\n\n");
+                }
+                for (IntOption option : INT_OPTIONS) {
+                    writer.write("# " + option.description() + " (" + option.min() + "-" + option.max()
+                        + ", default: " + option.defaultValue() + ")\n");
+                    writer.write(option.key() + "=" + ints.get(option.key()) + "\n\n");
                 }
             }
             Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);

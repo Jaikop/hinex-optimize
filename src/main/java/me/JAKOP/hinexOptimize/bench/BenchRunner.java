@@ -8,12 +8,15 @@ import com.mojang.blaze3d.platform.FramerateLimitTracker;
 import net.minecraft.SharedConstants;
 import net.minecraft.client.InactivityFpsLimit;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.Screenshot;
 import net.minecraft.network.chat.Component;
 
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.function.Consumer;
 
 /**
@@ -26,6 +29,14 @@ public final class BenchRunner {
     private static final float DEGREES_PER_SECOND = 24f; // one full turn every 15 s
     private static final float PITCH = 20f;
     private static final double RELOAD_TIMEOUT_SECONDS = 180;
+
+    /** {@code rdswitch}: render distances applied in turn, starting from the configured one. */
+    private static final int[] RD_STEPS = {16, 8, 12};
+    private static final long SECOND = 1_000_000_000L;
+    /** A step is settled when no section was sent to the mesher for this long and the queue is empty. */
+    private static final long SETTLE_QUIET_NANOS = 3 * SECOND / 2;
+    private static final long STEP_TIMEOUT_NANOS = 90 * SECOND;
+    private static final DateTimeFormatter FILE_STAMP = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss").withZone(ZoneId.systemDefault());
 
     public record Settings(String tag, String scenario, int warmupSeconds, int measureSeconds, boolean measureReload,
                            int renderDistance) {
@@ -65,6 +76,16 @@ public final class BenchRunner {
     private long reloadMillis = -1;
     private BenchCounters.Snapshot reloadCounters;
 
+    private int step = -1;
+    private long stepStart;
+    private long stepCompilesStart;
+    private long lastCompileCount;
+    private long lastCompileChange;
+    private long settleMillis;
+    private long maxSettleMillis;
+    private long blankFrames;
+    private final StringBuilder stepNotes = new StringBuilder();
+
     private BenchRunner(Settings settings, Consumer<Component> feedback, Consumer<BenchResult> onDone) {
         this.settings = settings;
         this.feedback = feedback;
@@ -96,7 +117,16 @@ public final class BenchRunner {
         baseYaw = mc.player.getYRot();
         spinStart = now;
         enter(Phase.WARMUP, now);
-        say("Benchmark '%s': warming up %d s, then measuring %d s".formatted(settings.tag(), settings.warmupSeconds(), settings.measureSeconds()));
+        if (isRdSwitch()) {
+            say("Benchmark '%s': warming up %d s, then switching render distance %d -> 16 -> 8 -> 12"
+                .formatted(settings.tag(), settings.warmupSeconds(), mc.options.renderDistance().get()));
+        } else {
+            say("Benchmark '%s': warming up %d s, then measuring %d s".formatted(settings.tag(), settings.warmupSeconds(), settings.measureSeconds()));
+        }
+    }
+
+    private boolean isRdSwitch() {
+        return "rdswitch".equals(settings.scenario());
     }
 
     public void addNote(String note) {
@@ -123,7 +153,7 @@ public final class BenchRunner {
         double elapsed = (now - phaseStart) / 1e9;
         switch (phase) {
             case WARMUP -> {
-                spin(mc, now);
+                aim(mc, now);
                 if (elapsed >= settings.warmupSeconds()) {
                     measureStart = BenchCounters.snapshot();
                     gcCountStart = gcCount();
@@ -133,11 +163,12 @@ public final class BenchRunner {
                 }
             }
             case MEASURE -> {
-                spin(mc, now);
+                aim(mc, now);
                 if (mc.getFramerateLimitTracker().getThrottleReason() != FramerateLimitTracker.FramerateThrottleReason.NONE) {
                     throttledFrames++;
                 }
-                if (elapsed >= settings.measureSeconds()) {
+                boolean measured = isRdSwitch() ? tickRdSwitch(mc, now) : elapsed >= settings.measureSeconds();
+                if (measured) {
                     if (throttledFrames > 0) {
                         addNote(throttledFrames + " frames throttled by the game (window minimized?)");
                     }
@@ -171,6 +202,87 @@ public final class BenchRunner {
         }
     }
 
+    /**
+     * Steps through {@link #RD_STEPS}; each step waits until the mesher has been quiet for
+     * {@link #SETTLE_QUIET_NANOS}. Settle time is measured to the last section sent to the mesher.
+     *
+     * @return true when every step has settled
+     */
+    private boolean tickRdSwitch(Minecraft mc, long now) {
+        long compiles = BenchCounters.sectionCompiles;
+        // A frame that drew no chunk section at all: the world "disappeared"
+        if (step >= 0 && mc.levelRenderer.visibleSections().isEmpty()) {
+            blankFrames++;
+        }
+        if (step < 0) {
+            startStep(mc, 0, now, compiles);
+            return false;
+        }
+        if (compiles != lastCompileCount) {
+            lastCompileCount = compiles;
+            lastCompileChange = now;
+        }
+        boolean quiet = now - lastCompileChange >= SETTLE_QUIET_NANOS && mc.levelRenderer.hasRenderedAllSections();
+        boolean timedOut = now - stepStart > STEP_TIMEOUT_NANOS;
+        if (now - stepStart < SECOND || !(quiet || timedOut)) {
+            return false;
+        }
+
+        long settle = Math.max(0, lastCompileChange - stepStart) / 1_000_000;
+        settleMillis += settle;
+        maxSettleMillis = Math.max(maxSettleMillis, settle);
+        if (!stepNotes.isEmpty()) {
+            stepNotes.append(' ');
+        }
+        stepNotes.append(RD_STEPS[step]).append(":").append(settle).append("ms/").append(compiles - stepCompilesStart).append("c");
+        if (timedOut) {
+            stepNotes.append("(timeout)");
+        }
+        if (step + 1 < RD_STEPS.length) {
+            startStep(mc, step + 1, now, compiles);
+            return false;
+        }
+        addNote("steps " + stepNotes);
+        addNote("blank frames " + blankFrames);
+        takeScreenshot(mc);
+        return true;
+    }
+
+    private void startStep(Minecraft mc, int index, long now, long compiles) {
+        step = index;
+        stepStart = now;
+        stepCompilesStart = compiles;
+        lastCompileCount = compiles;
+        lastCompileChange = now;
+        mc.options.renderDistance().set(RD_STEPS[index]);
+    }
+
+    private void takeScreenshot(Minecraft mc) {
+        String name = "hinexbench_" + settings.tag() + "_" + FILE_STAMP.format(Instant.now()) + ".png";
+        try {
+            Screenshot.grab(mc.gameDirectory, name, mc.gameRenderer.mainRenderTarget(), 1, message -> {
+            });
+            addNote("screenshot " + name);
+        } catch (Exception e) {
+            HinexOptimize.LOGGER.warn("[HinexBench] Screenshot failed", e);
+        }
+    }
+
+    private void aim(Minecraft mc, long now) {
+        if (isRdSwitch()) {
+            hold(mc);
+        } else {
+            spin(mc, now);
+        }
+    }
+
+    private void hold(Minecraft mc) {
+        mc.player.setYRot(baseYaw);
+        mc.player.yRotO = baseYaw;
+        mc.player.setXRot(PITCH);
+        mc.player.xRotO = PITCH;
+    }
+
     private void spin(Minecraft mc, long now) {
         float yaw = baseYaw + DEGREES_PER_SECOND * (float) ((now - spinStart) / 1e9);
         mc.player.setYRot(yaw);
@@ -187,6 +299,10 @@ public final class BenchRunner {
     private void finish(Minecraft mc) {
         // Captured before restoring, so the report shows the settings the run used
         BenchResult.Environment environment = environment(mc);
+        int effectiveDistance = mc.options.getEffectiveRenderDistance();
+        if (effectiveDistance != environment.renderDistance()) {
+            addNote("rendered distance " + effectiveDistance); // lowered by dynamic render distance or the server
+        }
         restoreEnvironment(mc);
         phase = Phase.DONE;
         current = null;
@@ -195,7 +311,7 @@ public final class BenchRunner {
         }
 
         BenchResult result = new BenchResult(Instant.now(), settings.tag(), settings.scenario(), environment, frames,
-            measureCounters, gcCount, gcMillis, reloadMillis, reloadCounters, notes.toString());
+            measureCounters, gcCount, gcMillis, reloadMillis, reloadCounters, settleMillis, maxSettleMillis, notes.toString());
         String line = BenchReport.summaryLine(result);
         try {
             Path file = BenchReport.write(mc.gameDirectory.toPath(), result);
@@ -242,8 +358,9 @@ public final class BenchRunner {
         mc.options.pauseOnLostFocus = false;
         // The default "AFK" limit caps the game at 30 FPS after a minute without input
         mc.options.inactivityFpsLimit().set(InactivityFpsLimit.MINIMIZED);
+        // Always saved: rdswitch changes it even when the run keeps the player's distance
+        savedRenderDistance = mc.options.renderDistance().get();
         if (settings.renderDistance() > 0) {
-            savedRenderDistance = mc.options.renderDistance().get();
             mc.options.renderDistance().set(settings.renderDistance());
         }
     }

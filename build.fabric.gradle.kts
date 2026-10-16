@@ -27,6 +27,9 @@ dependencies {
     // `mod*` configurations are converted by loom-back-compat on 26.1+
     modImplementation("net.fabricmc:fabric-loader:${property("deps.fabric_loader")}")
     fapi("fabric-api-base", "fabric-command-api-v2")
+
+    testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 // `-Phinexoptimize.<name>=<value>` becomes `-Dhinexoptimize.<name>=<value>` in the dev game,
@@ -61,6 +64,10 @@ java {
 }
 
 tasks {
+    test {
+        useJUnitPlatform()
+    }
+
     processResources {
         fun MutableMap<String, String>.register(key: String, value: String) {
             inputs.property(key, value)

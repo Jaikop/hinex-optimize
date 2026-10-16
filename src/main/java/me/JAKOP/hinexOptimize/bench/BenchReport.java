@@ -15,11 +15,11 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Writes {@code hinexoptimize/bench/summary-v1.csv} (one row per run) and a per-run frame-time CSV.
+ * Writes {@code hinexoptimize/bench/summary-v2.csv} (one row per run) and a per-run frame-time CSV.
  * Bump the summary file version when the columns change.
  */
 public final class BenchReport {
-    private static final String SUMMARY_FILE = "summary-v1.csv";
+    private static final String SUMMARY_FILE = "summary-v2.csv";
     private static final DateTimeFormatter FILE_STAMP = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss").withZone(ZoneId.systemDefault());
 
     private static final String[] COLUMNS = {
@@ -30,6 +30,7 @@ public final class BenchReport {
         "lazy_compiles", "lazy_ms", "gc_count", "gc_ms",
         "startup_ms", "startup_glsl_count", "startup_glsl_ms", "startup_pipeline_count", "startup_pipeline_ms",
         "reload_ms", "reload_glsl_count", "reload_glsl_ms", "reload_pipeline_count", "reload_pipeline_ms",
+        "section_compiles", "settle_ms", "max_settle_ms",
         "notes"
     };
 
@@ -115,6 +116,9 @@ public final class BenchReport {
         row.add(reload == null ? "" : fmt(reload.glslNanos() / 1e6, 1));
         row.add(reload == null ? "" : Long.toString(reload.pipelineCount()));
         row.add(reload == null ? "" : fmt(reload.pipelineNanos() / 1e6, 1));
+        row.add(Long.toString(m.sectionCompiles()));
+        row.add(Long.toString(r.settleMillis()));
+        row.add(Long.toString(r.maxSettleMillis()));
         row.add(csv(r.notes()));
         return row;
     }
@@ -124,10 +128,10 @@ public final class BenchReport {
         BenchResult.FrameStats s = r.frameStats();
         double frames = Math.max(1, r.frames());
         return String.format(Locale.ROOT,
-            "tag=%s backend=%s frames=%d avg_fps=%.1f low1_fps=%.1f low01_fps=%.1f p99_ms=%.2f max_ms=%.1f draws_pf=%.0f uniform_binds_pf=%.0f lazy_compiles=%d reload_ms=%d",
-            r.tag(), r.environment().backend(), r.frames(), s.avgFps(), s.low1Fps(), s.low01Fps(), s.p99Ms(), s.maxMs(),
-            r.measureCounters().drawCalls() / frames, r.measureCounters().uniformBinds() / frames,
-            r.measureCounters().lazyCount(), r.reloadMillis());
+            "tag=%s scenario=%s backend=%s frames=%d avg_fps=%.1f low1_fps=%.1f low01_fps=%.1f p99_ms=%.2f max_ms=%.1f stutters=%d draws_pf=%.0f uniform_binds_pf=%.0f lazy_compiles=%d reload_ms=%d section_compiles=%d settle_ms=%d",
+            r.tag(), r.scenario(), r.environment().backend(), r.frames(), s.avgFps(), s.low1Fps(), s.low01Fps(), s.p99Ms(), s.maxMs(),
+            s.stutters50Ms(), r.measureCounters().drawCalls() / frames, r.measureCounters().uniformBinds() / frames,
+            r.measureCounters().lazyCount(), r.reloadMillis(), r.measureCounters().sectionCompiles(), r.settleMillis());
     }
 
     private static String fmt(double value, int decimals) {

@@ -14,6 +14,7 @@ import java.util.function.BiConsumer;
  *
  * <ul>
  *   <li>{@code run [seconds]} — spin the camera where you stand and measure frame times, then a resource reload</li>
+ *   <li>{@code rdswitch} — change render distance 16 / 8 / 12 and time how long chunks take to settle</li>
  *   <li>{@code reload} — time a resource reload (F3+T) only</li>
  *   <li>{@code stats} — counters for the last second and compile totals</li>
  * </ul>
@@ -28,9 +29,11 @@ public final class BenchCommand {
         return LiteralArgumentBuilder.<S>literal("hinexbench")
             .executes(c -> help(c.getSource(), feedback))
             .then(LiteralArgumentBuilder.<S>literal("run")
-                .executes(c -> run(c.getSource(), feedback, DEFAULT_SECONDS))
+                .executes(c -> run(c.getSource(), feedback, "spin", DEFAULT_SECONDS))
                 .then(RequiredArgumentBuilder.<S, Integer>argument("seconds", IntegerArgumentType.integer(5, 600))
-                    .executes(c -> run(c.getSource(), feedback, IntegerArgumentType.getInteger(c, "seconds")))))
+                    .executes(c -> run(c.getSource(), feedback, "spin", IntegerArgumentType.getInteger(c, "seconds")))))
+            .then(LiteralArgumentBuilder.<S>literal("rdswitch")
+                .executes(c -> run(c.getSource(), feedback, "rdswitch", 0)))
             .then(LiteralArgumentBuilder.<S>literal("reload")
                 .executes(c -> reload(c.getSource(), feedback)))
             .then(LiteralArgumentBuilder.<S>literal("stats")
@@ -39,12 +42,13 @@ public final class BenchCommand {
 
     private static <S> int help(S source, BiConsumer<S, Component> feedback) {
         say(source, feedback, "/hinexbench run [seconds] - measure FPS while the camera spins, then a resource reload");
+        say(source, feedback, "/hinexbench rdswitch - switch render distance 16 / 8 / 12 and time the chunk rebuild");
         say(source, feedback, "/hinexbench reload - time a resource reload (F3+T)");
         say(source, feedback, "/hinexbench stats - per-frame counters for the last second");
         return 1;
     }
 
-    private static <S> int run(S source, BiConsumer<S, Component> feedback, int seconds) {
+    private static <S> int run(S source, BiConsumer<S, Component> feedback, String scenario, int seconds) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) {
             say(source, feedback, "Join a world first");
@@ -54,7 +58,7 @@ public final class BenchCommand {
             say(source, feedback, "A benchmark is already running");
             return 0;
         }
-        BenchRunner.Settings settings = new BenchRunner.Settings("manual", "spin", 5, seconds, true, 0);
+        BenchRunner.Settings settings = new BenchRunner.Settings("manual", scenario, 5, seconds, scenario.equals("spin"), 0);
         BenchRunner.prepare(mc, settings, message -> feedback.accept(source, message), null).start(mc);
         return 1;
     }
