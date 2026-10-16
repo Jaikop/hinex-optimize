@@ -6,6 +6,11 @@
   "compatibilityLevel": "${java}",
   "mixins": [],
   "client": [
+    "bench.MinecraftBenchMixin",
+    "bench.render.GlslCompileTimerMixin",
+    "bench.render.PipelineCompileTimerMixin",
+    "bench.render.RenderPassCounterMixin",
+    "bench.render.VulkanDescriptorCounterMixin",
     "core.MinecraftMixin"
   ],
   "injectors": {

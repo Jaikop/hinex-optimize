@@ -14,10 +14,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * Lithium-style switches stored in {@code config/hinexoptimize.properties}.
  * Loaded once, before mixins are applied, so changes need a restart.
+ *
+ * <p>For benchmarking, values can be overridden without touching the file:
+ * {@code -Dhinexoptimize.option.<key>=true|false}, or {@code -Dhinexoptimize.vanilla=true}
+ * to switch off every optimization while keeping the core and benchmark hooks.
  */
 public final class HinexConfig {
     public static final String FILE_NAME = "hinexoptimize.properties";
@@ -26,8 +31,12 @@ public final class HinexConfig {
     // Every option is declared here; features add their own entries.
     private static final List<Option> OPTIONS = List.of(
         Option.safe("mixin", "Master switch for all HinexOptimize mixins"),
-        Option.safe("mixin.core", "Core hooks used by the other features")
+        Option.safe("mixin.core", "Core hooks used by the other features"),
+        Option.safe("mixin.bench", "Frame times, draw counters and compile timings for /hinexbench (negligible overhead)")
     );
+
+    // Options that are not optimizations; vanilla mode keeps them on
+    private static final Set<String> INFRASTRUCTURE = Set.of("mixin", "mixin.core", "mixin.bench");
 
     private static HinexConfig instance;
 
@@ -56,6 +65,15 @@ public final class HinexConfig {
 
     public long enabledCount() {
         return values.values().stream().filter(Boolean::booleanValue).count();
+    }
+
+    /** Keys of declared options that are currently off, for benchmark reports. */
+    public List<String> disabledKeys() {
+        return values.entrySet().stream().filter(e -> !e.getValue()).map(Map.Entry::getKey).toList();
+    }
+
+    public boolean isVanillaMode() {
+        return Boolean.getBoolean("hinexoptimize.vanilla");
     }
 
     /**
@@ -107,7 +125,25 @@ public final class HinexConfig {
             }
         }
         config.save(file);
+        // Applied after saving so command-line overrides never end up in the file
+        config.applySystemOverrides();
         return config;
+    }
+
+    private void applySystemOverrides() {
+        boolean vanilla = isVanillaMode();
+        for (Option option : OPTIONS) {
+            if (vanilla && !INFRASTRUCTURE.contains(option.key())) {
+                values.put(option.key(), false);
+            }
+            String override = System.getProperty("hinexoptimize.option." + option.key());
+            if (override != null) {
+                values.put(option.key(), Boolean.parseBoolean(override.trim()));
+            }
+        }
+        if (vanilla) {
+            HinexOptimize.LOGGER.info("Vanilla mode: all optimizations disabled for this run");
+        }
     }
 
     /** Rewrites the file with every option, keeping user values; written atomically. */

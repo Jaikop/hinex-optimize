@@ -8,6 +8,9 @@ base.archivesName = "${property("mod.id") as String}-neoforge"
 
 val requiredJava = JavaVersion.VERSION_25
 
+// `-Phinexoptimize.<name>=<value>` becomes `-Dhinexoptimize.<name>=<value>` in the dev game
+val gameProperties = providers.gradlePropertiesPrefixedBy("hinexoptimize.").get()
+
 neoForge {
     version = property("deps.neo_loader") as String
 
@@ -22,6 +25,7 @@ neoForge {
             gameDirectory = rootProject.file("run")
             client()
             jvmArguments.add("-Dmixin.debug.export=true")
+            gameProperties.forEach { (key, value) -> jvmArguments.add("-D$key=$value") }
         }
 
         register("server") {

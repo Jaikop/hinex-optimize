@@ -38,6 +38,23 @@ gradlew "Set active project to 26.4-fabric"
 
 Запуск клиента для проверки: `gradlew :26.3-fabric:runClient` или `gradlew :26.3-neoforge:runClient`.
 
+## Бенчмарк
+
+В игре (нужен Fabric API на Fabric): `/hinexbench run [секунды]` — камера вращается на месте,
+мод меряет FPS, 1% / 0.1% low и счётчики отрисовки, затем время перезагрузки ресурсов (F3+T).
+`/hinexbench reload` — только перезагрузка, `/hinexbench stats` — счётчики за последнюю секунду.
+
+Автоматический прогон для сравнения сборок (создаёт мир с фиксированным сидом, меряет, закрывает игру):
+
+```
+powershell -File scripts\bench.ps1 -Node 26.4-fabric -Tag baseline -Vanilla
+powershell -File scripts\bench.ps1 -Node 26.3-fabric -Backend vulkan -Tag test -Repeat 2
+```
+
+`-Vanilla` выключает все оптимизации мода (остаются только замеры). Результаты дописываются
+в `run/hinexoptimize/bench/summary-v1.csv`, по кадрам — в отдельные CSV рядом.
+Окно игры во время прогона нельзя сворачивать. Сводка замеров — в [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
+
 ## Конфиг
 
 `config/hinexoptimize.properties` создаётся при первом запуске. Каждая оптимизация —
